@@ -1,0 +1,22 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/health",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "DISCORD_TOKEN",
+      "description": "Discord bot token from the Discord Developer Portal (Bot → Reset Token). Required for the bot to log in and start.",
+      "requiredAtBoot": true
+    },
+    {
+      "name": "CLIENT_ID",
+      "description": "Discord application client ID from the Discord Developer Portal (General Information → Application ID). Required for slash command registration.",
+      "requiredAtBoot": true
+    },
+    {
+      "name": "GUILD_ID",
+      "description": "Discord server (guild) ID for single-server slash command registration. Optional — leave empty for multi-guild mode.",
+      "requiredAtBoot": false
+    }
+  ]
+}

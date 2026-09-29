@@ -1,0 +1,72 @@
+services:
+  bot:
+    image: node:20-alpine
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "3000:3000"
+    environment:
+      # Local infra credentials (not user secrets)
+      - POSTGRES_URL=postgresql://titanbot:titanbot@db:5432/titanbot
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=titanbot
+      - POSTGRES_USER=titanbot
+      - POSTGRES_PASSWORD=titanbot
+      - POSTGRES_SSL=false
+      - LAVALINK_HOST=lavalink
+      - LAVALINK_PORT=2333
+      - LAVALINK_PASSWORD=youshallnotpass
+      - LAVALINK_SECURE=false
+      - LAVALINK_NAME=Main
+      - LAVALINK_SEARCH_PLATFORM=ytmsearch
+      - LAVALINK_REST_VERSION=v4
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    command: ["sh", "-ec", "npm install && exec node --watch src/app.js"]
+    depends_on:
+      db:
+        condition: service_healthy
+      lavalink:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    restart: on-failure
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=titanbot
+      - POSTGRES_PASSWORD=titanbot
+      - POSTGRES_DB=titanbot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U titanbot -d titanbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    environment:
+      - LAVALINK_PASSWORD=youshallnotpass
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/2333' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
+
+volumes:
+  postgres_data:
