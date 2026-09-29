@@ -85,8 +85,7 @@ class TitanBot extends Client {
 
       initializeMusic(this);
       
-      startupLog('Logging into Discord...');
-      await this.login(this.config.bot.token);
+      await this.loginWithRetry();
       startupLog('Discord login successful');
       
       startupLog('Registering slash commands...');
@@ -110,6 +109,21 @@ class TitanBot extends Client {
     } catch (error) {
       logger.error('Failed to start bot:', error);
       process.exit(1);
+    }
+  }
+
+  async loginWithRetry() {
+    const retryDelayMs = Number(process.env.DISCORD_LOGIN_RETRY_MS || 30000);
+
+    while (!this.isReady()) {
+      try {
+        startupLog('Logging into Discord...');
+        await this.login(this.config.bot.token);
+        return;
+      } catch (error) {
+        logger.error('Discord login failed; retrying after the configured delay:', error.message);
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
     }
   }
 
